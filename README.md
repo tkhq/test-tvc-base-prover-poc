@@ -23,13 +23,7 @@ The enclave side runs on [Turnkey Verifiable Cloud (TVC)](https://docs.turnkey.c
 
 ## Quickstart (local, no Turnkey account)
 
-Rust 1.95 is pinned via `rust-toolchain.toml`; with
-[rustup](https://rustup.rs) installed it is fetched automatically.
-
 ```sh
-git clone https://github.com/tkhq/test-base-prover-poc.git
-cd test-base-prover-poc
-
 make build   # cargo build --all
 make test    # cargo test --all-targets
 
@@ -171,13 +165,23 @@ The prove response carries the block output as canonical QOS JSON bytes —
 the exact bytes every proof binds — plus three independent proofs. Any one
 proof suffices; they differ in what the chain has pinned out of band:
 
+QOS's QK and EK signing keys are natively P-256 (`secp256r1`). Base supports
+native P-256 verification through its `P256VERIFY` precompile, so the typical
+path for Options 1 and 2 requires very little integration work and keeps the
+common-case on-chain cost to one native signature verification (with the EK
+boot proof verified only when a replica is registered). If a protocol prefers
+another curve, such as `secp256k1`, the enclave can trivially derive a
+domain-separated signing key from the EK or QK secret and emit signatures on
+that curve instead; the proof model and key-provenance chain remain the same.
+
 1. **QK model** (`qk_proof`): pins the deployment-wide quorum public key.
-   One signature verification over the block output bytes; the cheapest
-   on chain.
+   One native P-256 signature verification over the block output bytes; the
+   cheapest on chain.
 2. **EK model** (`ek_proof`): pins the manifest hash and PCR0-3. A boot
    proof attestation doc (`user_data == manifest hash`, PCR17 live
    manifest commitment, cert chain to the AWS Nitro root) establishes the
-   per-replica ephemeral key, which verifies the block output signature.
+   per-replica ephemeral key, which verifies the block output with one native
+   P-256 signature check.
    The boot proof only changes when a replica boots, so it can be verified
    once and the key cached.
 3. **Attestation-binding model** (`nsm_proof`): pins the manifest hash and

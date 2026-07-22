@@ -45,19 +45,9 @@ export TVC_API_KEY_PRIVATE=<hex P256 private key>
 export TVC_NON_INTERACTIVE=true   # fail fast instead of prompting
 ```
 
-## 3. Clone this repo and install the verification CLI
+## 3. Create the app and deployment
 
-Install `tvc_base_cli` globally so it can be run from anywhere:
-
-```sh
-git clone https://github.com/tkhq/test-base-prover-poc.git
-cd test-base-prover-poc
-cargo install --path crates/tvc_base_cli
-```
-
-## 4. Create the app and deployment
-
-### 4a. App create
+### 3a. App create
 
 `tvc app create` requires a config file, but no hand-editing is needed:
 `tvc app init` pre-fills the quorum public key and operator key from your
@@ -79,7 +69,7 @@ Record from the output:
 - **App ID** (`TVC_APP_ID`)
 - **Manifest Set Operator IDs** (needed for `tvc deploy approve`)
 
-### 4b. Deployment create — pure CLI args, no config file
+### 3b. Deployment create — pure CLI args, no config file
 
 `tvc deploy create` supports flag-only operation. Use the **latest
 successful `stagex` workflow run on `main`**: every run's "Build
@@ -129,7 +119,7 @@ tvc deploy approve \
 # operator ID comes from the app create output
 ```
 
-## 5. Wait for the app to be ready
+## 4. Wait for the app to be ready
 
 ```sh
 # Deployment status (manifest approval / provisioning progress):
@@ -144,10 +134,18 @@ Repeat until `tvc app status` reports all replicas healthy (e.g.
 `Public Domain` in `tvc app list` (on dev it follows the pattern
 `app-<APP_ID>.tvc.dev.turnkey.engineering`).
 
-## 6. Verify end to end with tvc_base_cli
+## 5. Verify end to end with tvc_base_cli
 
-Run the two-phase verification against the live deployment (the CLI was
-installed globally in step 3):
+Clone this repo and install `tvc_base_cli` globally so it can be run from
+anywhere:
+
+```sh
+git clone https://github.com/tkhq/test-base-prover-poc.git
+cd test-base-prover-poc
+cargo install --path crates/tvc_base_cli
+```
+
+Run the two-phase verification against the live deployment:
 
 ```sh
 tvc_base_cli --url https://<your-app-public-url>
@@ -158,7 +156,7 @@ attestation document against the AWS Nitro root, extracts the quorum key
 from the attested manifest, encrypts a synthetic `BlockWitness` to it, and
 submits it to `/prove_block`. It also prints the manifest's pivot
 (app) hash — which should equal the **Expected Executable Digest** from
-step 4b's CI output for a correctly deployed app.
+step 3b's CI output for a correctly deployed app.
 
 Phase 2 (**on-chain verifier**) then verifies each of the prove response's
 three independent proofs over the block output bytes, the way a verifier
