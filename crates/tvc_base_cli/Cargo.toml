@@ -1,0 +1,24 @@
+[package]
+name = "tvc_base_cli"
+description = "Two-phase verification CLI for a TVC Base block prover deployment: sequencer emulation and on-chain verifier emulation"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+aws-nitro-enclaves-nsm-api = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+qos_core = { workspace = true }
+qos_hex = { workspace = true }
+qos_nsm = { workspace = true }
+qos_p256 = { workspace = true }
+reqwest = { version = "0.12", features = ["json"] }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+base-stubs = { workspace = true, features = ["fixtures"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+base_prover = { workspace = true }
+
+[lints]
+workspace = true

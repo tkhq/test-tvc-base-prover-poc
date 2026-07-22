@@ -1,8 +1,9 @@
 HOST ?= 127.0.0.1
-PORT ?= 44020
-LOCAL_ENCLAVE_DIR ?= /tmp/tvc-template-local-enclave
+PORT ?= 3000
+LOCAL_ENCLAVE_DIR ?= /tmp/tvc-base-prover-local-enclave
 EPHEMERAL_FILE ?= $(LOCAL_ENCLAVE_DIR)/qos.ephemeral.key
 QUORUM_FILE ?= $(LOCAL_ENCLAVE_DIR)/qos.quorum.key
+MANIFEST_FILE ?= $(LOCAL_ENCLAVE_DIR)/qos.manifest
 
 .PHONY: all
 all: build
@@ -30,18 +31,22 @@ local-keys:
 	mkdir -p $(LOCAL_ENCLAVE_DIR)
 	test -f $(EPHEMERAL_FILE) || openssl rand -hex 32 > $(EPHEMERAL_FILE)
 	test -f $(QUORUM_FILE) || openssl rand -hex 32 > $(QUORUM_FILE)
+	test -f $(MANIFEST_FILE) || cargo run --bin gen_fake_manifest -- \
+		--quorum-file $(QUORUM_FILE) --out $(MANIFEST_FILE)
 
 .PHONY: run
 run: local-keys
-	cargo run --bin helloworld -- \
+	cargo run --bin base_prover -- \
 	--host $(HOST) \
 	--port $(PORT) \
 	--ephemeral-file $(EPHEMERAL_FILE) \
-	--quorum-file $(QUORUM_FILE)
+	--quorum-file $(QUORUM_FILE) \
+	--manifest-file $(MANIFEST_FILE) \
+	--mock-nsm
 
-out/helloworld/index.json: \
-	Cargo.lock Cargo.toml rust-toolchain.toml $(shell find images/helloworld crates -type f ! -path '*/target/*')
-	$(call build,helloworld)
+out/base_prover/index.json: \
+	Cargo.lock Cargo.toml rust-toolchain.toml $(shell find images/base_prover crates -type f ! -path '*/target/*')
+	$(call build,base_prover)
 
 define build_context
 $$( \
@@ -59,7 +64,7 @@ endef
 define build
 	$(eval NAME := $(1))
 	$(eval TYPE := $(if $(2),$(2),dir))
-	$(eval REGISTRY := tkhq-tvc-helloworld)
+	$(eval REGISTRY := tkhq-tvc-base-prover)
 	$(eval PLATFORM := linux/amd64)
 	DOCKER_BUILDKIT=1 \
 	SOURCE_DATE_EPOCH=1 \
@@ -69,7 +74,7 @@ define build
 		--tag $(REGISTRY)/$(NAME) \
 		--progress=plain \
 		--platform=$(PLATFORM) \
-		--label "org.opencontainers.image.source=https://github.com/tkhq/tvc-helloworld" \
+		--label "org.opencontainers.image.source=https://github.com/tkhq/test-base-prover-poc" \
 		$(if $(filter common,$(NAME)),,$(call build_context,$(1))) \
 		$(if $(filter 1,$(NOCACHE)),--no-cache) \
 		--output "\

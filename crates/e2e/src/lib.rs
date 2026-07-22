@@ -22,7 +22,7 @@ const POST_BIND_SLEEP: Duration = Duration::from_millis(500);
 
 /// Wrapper type for [`std::process::Child`] that kills the process on drop.
 #[derive(Debug)]
-pub struct ChildWrapper(std::process::Child);
+struct ChildWrapper(std::process::Child);
 
 impl From<std::process::Child> for ChildWrapper {
     fn from(child: std::process::Child) -> Self {
@@ -46,13 +46,12 @@ pub fn find_free_port() -> Option<u16> {
     }
 }
 
-/// Wait until the given `port` is bound. Helpful for telling if something is
-/// listening on the given port.
+/// Wait until the given `port` is bound.
 ///
 /// # Panics
 ///
-/// Panics if the the port is not bound to within `MAX_PORT_BIND_WAIT_TIME`.
-pub fn wait_until_port_is_bound(port: u16) {
+/// Panics if the port is not bound within `MAX_PORT_BIND_WAIT_TIME`.
+fn wait_until_port_is_bound(port: u16) {
     let mut wait_time = PORT_BIND_WAIT_TIME_INCREMENT;
 
     while wait_time < MAX_PORT_BIND_WAIT_TIME {
@@ -82,6 +81,9 @@ const HOST_IP: &str = "127.0.0.1";
 pub struct TestArgs {
     /// The base URL for the REST server (e.g. `http://127.0.0.1:12345`)
     pub base_url: String,
+    /// The JSON encoded fake QOS v2 manifest envelope served by the server
+    /// under test.
+    pub manifest: Vec<u8>,
 }
 
 /// Test harness builder.
@@ -97,10 +99,10 @@ impl Builder {
 
     /// Execute `test`.
     ///
-    /// Spawns the `helloworld` binary, waits for it to bind, then runs
+    /// Spawns the `base_prover` binary, waits for it to bind, then runs
     /// the provided test function with a [`TestArgs`] containing the base URL.
     ///
-    /// Note this test env builder relies on the `helloworld` binary already
+    /// Note this test env builder relies on the `base_prover` binary already
     /// being built and existing in the target directory. Run `cargo build`
     /// from the workspace root before running integration tests.
     ///
@@ -115,18 +117,27 @@ impl Builder {
         let host_port =
             find_free_port().expect("failed to find a free port after maximum search attempts");
 
-        let server_binary = assert_cmd::cargo::cargo_bin("helloworld");
+        let server_binary = assert_cmd::cargo::cargo_bin("base_prover");
         let temp_dir = tempfile::tempdir().expect("failed to create temp dir");
         let ephemeral_key_path = temp_dir.path().join("qos.ephemeral.key");
         let quorum_key_path = temp_dir.path().join("qos.quorum.key");
+        let manifest_path = temp_dir.path().join("qos.manifest");
         P256Pair::generate()
             .expect("failed to generate ephemeral key")
             .to_hex_file(&ephemeral_key_path)
             .expect("failed to write ephemeral key");
-        P256Pair::generate()
-            .expect("failed to generate quorum key")
+        let quorum_pair = P256Pair::generate().expect("failed to generate quorum key");
+        quorum_pair
             .to_hex_file(&quorum_key_path)
             .expect("failed to write quorum key");
+        // A real JSON encoded v2 manifest envelope: the NSM commits to its
+        // hash in the live manifest-commitment PCR.
+        let envelope =
+            tvc_utils::fake_manifest::fake_manifest_envelope(&quorum_pair.public_key().to_bytes())
+                .expect("failed to build fake manifest envelope");
+        let manifest =
+            qos_json::to_vec(&envelope).expect("failed to serialize fake manifest envelope");
+        std::fs::write(&manifest_path, &manifest).expect("failed to write manifest");
 
         let _server_process: ChildWrapper = Command::new(server_binary)
             .arg("--host")
@@ -137,15 +148,18 @@ impl Builder {
             .arg(&ephemeral_key_path)
             .arg("--quorum-file")
             .arg(&quorum_key_path)
+            .arg("--manifest-file")
+            .arg(&manifest_path)
+            .arg("--mock-nsm")
             .spawn()
-            .expect("failed to spawn helloworld binary")
+            .expect("failed to spawn base_prover binary")
             .into();
 
         wait_until_port_is_bound(host_port);
 
         let base_url = format!("http://{HOST_IP}:{host_port}");
 
-        let test_args = TestArgs { base_url };
+        let test_args = TestArgs { base_url, manifest };
 
         test(test_args).await;
     }

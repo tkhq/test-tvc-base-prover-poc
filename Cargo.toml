@@ -1,8 +1,11 @@
 [workspace]
 members = [
+  "crates/base_stubs",
   "crates/e2e",
   "crates/metrics",
-  "crates/helloworld",
+  "crates/tvc_utils",
+  "crates/tvc_base_cli",
+  "crates/base_prover",
 ]
 
 resolver = "3"
@@ -11,7 +14,7 @@ resolver = "3"
 edition = "2024"
 version = "0.2.0"
 publish = false
-rust-version = "1.94"
+rust-version = "1.95"
 
 [workspace.lints.clippy]
 unwrap_used = "deny"
@@ -23,10 +26,32 @@ unsafe_code = "forbid"
 missing_docs = "warn"
 
 [workspace.dependencies]
+alloy-primitives = { version = "1", default-features = false, features = ["std", "serde", "map"] }
+aws-nitro-enclaves-nsm-api = { version = "0.4", default-features = false }
+sha2 = { version = "0.10", default-features = false }
+base-stubs = { path = "crates/base_stubs" }
+tvc_utils = { path = "crates/tvc_utils" }
+base_prover = { path = "crates/base_prover" }
+# Base's Rust monorepo (github.com/base/base), pinned by rev. Provides the
+# stateless state transition function (`base-proof-executor`) and its input
+# types. These crates are unpublished (version 0.0.0), so git deps are the
+# only way to consume them.
+base-common-consensus = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std", "serde", "k256"] }
+base-common-evm = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std"] }
+base-common-genesis = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std", "serde"] }
+base-common-rpc-types-engine = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std", "serde", "k256"] }
+base-proof-executor = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std"] }
+base-proof-mpt = { git = "https://github.com/base/base", rev = "a3ebd801c16582b51bfb8a6d7d775c2922a18b46", default-features = false, features = ["std", "serde"] }
+# Alloy crates matching the versions used by base/base at the pinned rev.
+alloy-consensus = { version = "2.0.5", default-features = false, features = ["std", "serde"] }
+alloy-eips = { version = "2.0.5", default-features = false, features = ["std"] }
+alloy-rlp = { version = "0.3.13", default-features = false }
+alloy-rpc-types-debug = { version = "2.0.5", default-features = false }
+alloy-rpc-types-engine = { version = "2.0.5", default-features = false, features = ["std", "serde"] }
 assert_cmd = "2.0"
+thiserror = "2"
 axum = { version = "0.8.8", default-features = false }
 serde_json = "1.0.142"
-serde = { version = "1", default-features = false }
 tokio = { version = "1.47", default-features = false }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -35,12 +60,10 @@ tower-http = { version = "0.6", features = ["trace"] }
 http-body-util = "0.1"
 pin-project-lite = "0.2"
 prometheus = { version = "0.13", default-features = false }
-sha2 = { version = "0.10", default-features = false }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tempfile = "3.23"
-ureq = { version = "2.9", default-features = false }
-url = { version = "2.5.7", default-features = false } 
-qos_core = { version = "0.10.0", default-features = false }
-qos_hex = { version = "0.10.0", default-features = false }
-qos_json = { version = "0.10.0", default-features = false }
-qos_p256 = { version = "0.10.0", default-features = false }
+qos_core = { version = "0.13.0", default-features = false }
+qos_hex = { version = "0.13.0", default-features = false }
+qos_nsm = { version = "0.13.0", default-features = false }
+qos_json = { version = "0.13.0", default-features = false }
+qos_p256 = { version = "0.13.0", default-features = false }
