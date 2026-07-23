@@ -1,0 +1,35 @@
+[package]
+name = "base-stubs"
+description = "Base block proving types around the real base/base stateless state transition function (base-proof-executor), plus the thin PoC types that wrap it"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+alloy-consensus = { workspace = true }
+alloy-eips = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-rlp = { workspace = true }
+alloy-rpc-types-debug = { workspace = true }
+alloy-rpc-types-engine = { workspace = true }
+base-common-consensus = { workspace = true }
+base-common-evm = { workspace = true }
+base-common-genesis = { workspace = true }
+base-common-rpc-types-engine = { workspace = true }
+base-proof-executor = { workspace = true }
+base-proof-mpt = { workspace = true }
+qos_json = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = { workspace = true }
+
+[features]
+# PoC-local test fixtures (synthetic block + witness); not part of the
+# base/base type universe.
+fixtures = []
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = { workspace = true }

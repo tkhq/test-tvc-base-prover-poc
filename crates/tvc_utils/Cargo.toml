@@ -1,0 +1,22 @@
+[package]
+name = "tvc_utils"
+description = "Dev/test utilities for the TVC Base block prover PoC (fake manifest generation); not part of the core app logic"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+qos_core = { workspace = true }
+qos_json = { workspace = true }
+qos_nsm = { workspace = true }
+qos_p256 = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = { workspace = true }

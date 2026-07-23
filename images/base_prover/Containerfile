@@ -1,4 +1,4 @@
-FROM stagex/pallet-rust:1.94.0@sha256:4e2d4273a1d5c6d62660968302791f3cf550c3d12629e66314956ff46c97fc0e AS build
+FROM stagex/pallet-rust:1.95.0@sha256:e484fa5ab3b6e89954c98ff202ff24200a215adaa2c33b18781e84389cbe50ea AS build
 
 # Rust configuration
 ENV RUSTFLAGS='-C target-feature=+crt-static'
@@ -8,7 +8,7 @@ ENV CARGOFLAGS='--target x86_64-unknown-linux-musl --no-default-features --locke
 ENV RELEASE_DIR=/src/target/x86_64-unknown-linux-musl/release
 
 # Name of the crate directory containing the main binary
-ENV APPLICATION_CRATE_NAME=helloworld
+ENV APPLICATION_CRATE_NAME=base_prover
 
 # Load Rust workspace
 ADD Cargo.toml Cargo.lock rust-toolchain.toml /src/
